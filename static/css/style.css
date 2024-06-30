@@ -1,0 +1,37 @@
+/* static/css/style.css */
+body { 
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#dropZone { 
+    transition: background-color 0.3s;
+}
+
+#imagePreview { 
+    max-height: 300px;
+}
+
+#analyzeButton:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+}
+
+#resultPrompt {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+#resultAnswer {
+    font-weight: 500;
+}
+
+/* Dark mode styles */
+.dark body {
+    background-color: #1a202c;
+    color: #e2e8f0;
+}
+
+.dark #resultPrompt {
+    color: #a0aec0;
+}

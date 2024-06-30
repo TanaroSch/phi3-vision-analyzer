@@ -1,0 +1,12 @@
+flask
+transformers
+torch
+Pillow
+requests
+python-dotenv
+torchvision
+setuptools
+wheel
+packaging
+numpy
+flash-attn
