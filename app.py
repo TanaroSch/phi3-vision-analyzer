@@ -43,7 +43,6 @@ def load_model_and_processor(sender, **extra):
                     use_flash_attention_2=False  # Disable FlashAttention2
                 ).to(device)
             else:
-
                 # Hugging Face token setup
                 hf_token = os.getenv('HUGGINGFACE_TOKEN')
                 if not hf_token:
@@ -80,6 +79,8 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     prompt = request.form['prompt']
+    if not prompt:
+        prompt = "Please describe the image in detail!"
     image_source = request.form.get('image_source')
     
     try:
