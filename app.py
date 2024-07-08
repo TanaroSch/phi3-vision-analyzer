@@ -19,11 +19,6 @@ app = Flask(__name__)
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Hugging Face token setup
-hf_token = os.getenv('HUGGINGFACE_TOKEN')
-if not hf_token:
-    app.logger.warning("HUGGINGFACE_TOKEN not found in .env file. You may not be able to download the model if it's not available locally.")
-
 # Model setup
 model_id = "microsoft/phi-3-vision-128k-instruct"
 model_path = os.getenv('MODEL_PATH', './model')
@@ -36,9 +31,6 @@ processor = None
 def load_model_and_processor(sender, **extra):
     global model, processor
     if model is None or processor is None:
-        if hf_token:
-            login(token=hf_token)
-        
         try:
             # First, try to load the model from the local path
             if os.path.exists(model_path):
@@ -51,6 +43,14 @@ def load_model_and_processor(sender, **extra):
                     use_flash_attention_2=False  # Disable FlashAttention2
                 ).to(device)
             else:
+
+                # Hugging Face token setup
+                hf_token = os.getenv('HUGGINGFACE_TOKEN')
+                if not hf_token:
+                    app.logger.warning("HUGGINGFACE_TOKEN not found in .env file. You may not be able to download the model if it's not available locally.")
+                if hf_token:
+                    login(token=hf_token)
+                
                 # If local path doesn't exist, try to download from Hugging Face
                 app.logger.info(f"Local model not found. Attempting to download from Hugging Face: {model_id}")
                 processor = AutoProcessor.from_pretrained(model_id, token=hf_token, trust_remote_code=True)
