@@ -62,7 +62,7 @@ This is a web application that uses the Phi-3-Vision model to analyze images bas
    python app.py
    ```
 
-2. Open a web browser and navigate to `http://localhost:5000`.
+2. Open a web browser and navigate to `http://localhost:5000`. This might take a wile to be available, as the checkpoint shareds have to be loaded.
 
 3. Upload an image or provide an image URL.
 

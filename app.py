@@ -5,12 +5,12 @@ import torch
 from PIL import Image
 import requests
 from io import BytesIO
-from threading import Thread
 import logging
 import traceback
 import os
 from dotenv import load_dotenv
 from huggingface_hub import login
+from flask.signals import request_started
 
 load_dotenv()
 
@@ -29,37 +29,45 @@ model_id = "microsoft/phi-3-vision-128k-instruct"
 model_path = os.getenv('MODEL_PATH', './model')
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Authenticate with Hugging Face if token is available
-if hf_token:
-    login(token=hf_token)
+# Initialize global variables for model and processor
+model = None
+processor = None
 
-try:
-    # First, try to load the model from the local path
-    if os.path.exists(model_path):
-        app.logger.info(f"Loading model from local path: {model_path}")
-        processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, 
-            trust_remote_code=True, 
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-            use_flash_attention_2=False  # Disable FlashAttention2
-        ).to(device)
-    else:
-        # If local path doesn't exist, try to download from Hugging Face
-        app.logger.info(f"Local model not found. Attempting to download from Hugging Face: {model_id}")
-        processor = AutoProcessor.from_pretrained(model_id, token=hf_token, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id, 
-            token=hf_token, 
-            trust_remote_code=True, 
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-            use_flash_attention_2=False  # Disable FlashAttention2
-        ).to(device)
-    
-    app.logger.info(f"Model loaded successfully on {device}")
-except Exception as e:
-    app.logger.error(f"Error loading model: {str(e)}")
-    raise
+def load_model_and_processor(sender, **extra):
+    global model, processor
+    if model is None or processor is None:
+        if hf_token:
+            login(token=hf_token)
+        
+        try:
+            # First, try to load the model from the local path
+            if os.path.exists(model_path):
+                app.logger.info(f"Loading model from local path: {model_path}")
+                processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_path, 
+                    trust_remote_code=True, 
+                    torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+                    use_flash_attention_2=False  # Disable FlashAttention2
+                ).to(device)
+            else:
+                # If local path doesn't exist, try to download from Hugging Face
+                app.logger.info(f"Local model not found. Attempting to download from Hugging Face: {model_id}")
+                processor = AutoProcessor.from_pretrained(model_id, token=hf_token, trust_remote_code=True)
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_id, 
+                    token=hf_token, 
+                    trust_remote_code=True, 
+                    torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+                    use_flash_attention_2=False  # Disable FlashAttention2
+                ).to(device)
+            
+            app.logger.info(f"Model loaded successfully on {device}")
+        except Exception as e:
+            app.logger.error(f"Error loading model: {str(e)}")
+            raise
+
+request_started.connect(load_model_and_processor, app)
 
 user_prompt = '<|user|>\n'
 assistant_prompt = '<|assistant|>\n'
